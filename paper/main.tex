@@ -186,31 +186,35 @@ Gemini leads by $\approx$8 points; Claude and Codex are within one problem of ea
 
 \paragraph{Interpretation (v0.2, addressing peer review).}
 MBPP near-ceiling scores (99--100\%) most likely reflect \emph{benchmark saturation / training
-exposure} (MBPP is a public 2021 benchmark seen by all teachers), \textbf{not} differential
-skill; we therefore do \textbf{not} rest the teacher ranking on MBPP. On the harder
-\texttt{code\_contests} set the picture differs and separates the teachers more clearly:
-\textbf{Gemini leads (77\%, 115/150), then Claude (69\%)~$\approx$~Codex (69\%), then Grok (50\%)},
-i.e.\ no single vendor's model is uniquely best on hard problems; Gemini is ahead by $\approx$8
-points while Claude and Codex are within one problem of each other. \textsuperscript{\S}Claude's first run was
-interrupted at 122/150 problems; we completed the remaining 28 (22 passed) so every teacher is
-scored on the same 150, giving Claude a fair 69\% (104/150) --- up from an incomplete-run 67\%
-(82/122). $^{\ddagger}$Gemini's competition run hit the same class of infrastructure artifact as
-Grok's: its API prepaid credits were depleted partway through generation, so the final 34/150
-problems returned billing errors (429) counted as no-code. After credits were restored we re-ran
-exactly those 34 items and merged them; Gemini's fair pass@1 is 77\% (115/150) with 100\%
-extraction. Like the Grok correction, this is a \emph{fairness} fix applied identically and
-reported transparently. $^{\dagger}$Grok's
-first-pass competition score was depressed by an \textbf{infrastructure artifact} --- initially
-52\% of its batch CLI calls returned empty (timeout/flakiness), not wrong code; a direct call
-yields a correct fenced solution. We added empty-response retries and re-measured Grok: its
-\textbf{fair} pass@1 is \textbf{50\% (75/150)}, with code-extraction success rising from 48\% to
-73\% (109/150). A residual \textbf{27\% (41/150) still returned no usable code even after
-retries}, which we cannot fully attribute to CLI flakiness vs.\ genuine difficulty; we report it
-transparently rather than discard those items. The empty-response fix is a \emph{fairness}
-correction; the remaining Grok--Codex/Claude gap on hard problems (50\% vs 67--69\%) is thus a
-conservative (Grok-favorable) estimate. Crucially, the ranking is \textbf{not} produced by any LLM judge (execution
-only), so \emph{self-preference/family bias is excluded by design}; the residual risks are
-asymmetric train-leak and CLI/parser artifacts, addressed here and in Section~\ref{sec:limits}.
+exposure} --- MBPP is a public 2021 benchmark seen by all four teachers --- \textbf{not}
+differential skill. We therefore do \textbf{not} rest the teacher ranking on MBPP.
+
+On the harder \texttt{code\_contests} set the teachers separate more clearly:
+\textbf{Gemini leads (77\%, 115/150), then Claude (69\%)~$\approx$~Codex (69\%), then Grok (50\%)}.
+No single vendor's model is uniquely best on hard problems; Gemini is ahead by $\approx$8 points,
+while Claude and Codex are within one problem of each other. Crucially, the ranking is \textbf{not}
+produced by any LLM judge (execution only), so \emph{self-preference / family bias is excluded by
+design}; the residual risks are asymmetric train-leak and CLI/parser artifacts
+(Section~\ref{sec:limits}).
+
+\paragraph{Fairness corrections.}
+We found and corrected three \emph{infrastructure} artifacts (not capability differences), applied
+identically to each affected teacher and reported transparently:
+\begin{itemize}
+  \item \textbf{\S\ Claude} --- the first run was interrupted at 122/150 problems. We completed the
+    remaining 28 (22 passed) so every teacher is scored on the same 150, giving Claude a fair
+    \textbf{69\% (104/150)}, up from an incomplete-run 67\% (82/122).
+  \item \textbf{\ddag\ Gemini} --- the API's prepaid credits were depleted partway through
+    generation, so the final 34/150 problems returned billing errors (429) counted as no-code.
+    After the credits were restored we re-ran exactly those 34 and merged them:
+    \textbf{77\% (115/150)}, 100\% code-extraction.
+  \item \textbf{\dag\ Grok} --- initially 52\% of its batch CLI calls returned empty
+    (timeout/flakiness, not wrong code). We added empty-response retries and re-measured:
+    \textbf{50\% (75/150)}, extraction 48\%$\to$73\% (109/150). A residual 27\% (41/150) still
+    returned no usable code even after retries; we cannot fully separate CLI flakiness from genuine
+    difficulty, so we report it transparently rather than discard those items. The remaining
+    Grok--Codex/Claude gap (50\% vs 69\%) is thus a conservative (Grok-favorable) estimate.
+\end{itemize}
 
 \subsection{Collaboration mode A --- imitation (SFT) does not help competent students}
 Held-out pass@1 (intersection-controlled, 197 shared problems):

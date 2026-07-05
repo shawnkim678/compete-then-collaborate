@@ -30,3 +30,9 @@ unsloth_compiled_cache/
 .venv/
 venv/
 *.egg-info/
+# LaTeX build logs (keep main.pdf, drop logs)
+*.aux
+*.log
+*.blg
+*.out
+*.bbl
