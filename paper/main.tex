@@ -26,6 +26,12 @@ Verifiable Curriculum to Improve a Coding Student Beyond Imitation}
 \begin{document}
 \maketitle
 
+\begin{center}
+\small\textbf{Code, data, tests, and verification harness:}
+\url{https://github.com/shawnkim678/compete-then-collaborate}\\[-2pt]
+\small\emph{Every number is recomputable from the released files or by regenerating teacher solutions under your own provider terms.}
+\end{center}
+
 \begin{abstract}
 Large language models are increasingly used as \emph{teachers} that generate training
 data for smaller \emph{student} models. Prior multi-teacher knowledge distillation merges
@@ -350,7 +356,14 @@ reinforcement learning}, which improves a coding student where imitation fails. 
 full on-prem pipeline and the framework patches required to reproduce it on NVIDIA GB10.
 
 \section*{Reproducibility}
-Scripts (\texttt{\textasciitilde/genesis/lora\_pipeline/}): \texttt{verify\_code.py},
+All code, task banks, hidden tests, results, and this paper are released at
+\url{https://github.com/shawnkim678/compete-then-collaborate}. Readers can re-verify every reported
+number offline (\texttt{python reproduce.py --check-banks --selftest} on the released artifacts) or
+regenerate teacher solutions with their own API keys under their own provider terms; we redistribute
+no teacher outputs (see the ethics statement).
+
+\medskip\noindent
+Scripts: \texttt{verify\_code.py},
 \texttt{verify\_stdio.py}, \texttt{build\_taskbank\_mbpp.py}, \texttt{build\_contests\_bank.py},
 \texttt{prof\_run.py}, \texttt{prof\_run\_stdio.py}, \texttt{prof\_retry.py},
 \texttt{equalize\_golden.py}, \texttt{eval\_code\_students.py}, \texttt{grpo\_train.py}.
