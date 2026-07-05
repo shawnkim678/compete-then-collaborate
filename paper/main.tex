@@ -20,7 +20,7 @@
 
 \title{Compete then Collaborate: Frontier AI Teachers Build a\\
 Verifiable Curriculum to Improve a Coding Student Beyond Imitation}
-\author{Miseong (Shawn) Kim \\ \small Genesis (DGX Spark GB10)}
+\author{Miseong (Shawn) Kim \\ \small Genesis Cortex AI Inc.}
 \date{Draft v0.2 (peer-review revised), 2026}
 
 \begin{document}
@@ -231,10 +231,12 @@ Student & base & $+$Claude & $+$Codex & $+$Grok \\
 harmful).}
 \end{table}
 
-All students fall \textbf{below base}; the teacher ranking is preserved (Claude least harmful).
-\textbf{Union} of all teachers (SFT) is also below base (MBPP 72.7\%, competition \textbf{2.9\%}
-vs base 5.9\%). Imitation at this scale degrades already-competent coder models; the bottleneck
-is task \emph{difficulty/headroom}, not model size (7B and 32B both degrade).
+All students fall \textbf{below base}, and the teacher ranking is preserved (Claude least harmful).
+The \textbf{union} of all teachers (SFT) is also below base (MBPP 72.7\%, competition \textbf{2.9\%}
+vs base 5.9\%).
+
+Imitation at this scale degrades already-competent coder models; the bottleneck is task
+\emph{difficulty/headroom}, not model size --- 7B and 32B both degrade.
 
 \subsection{Collaboration mode B --- verifiable-reward RL (RLVR) improves the student}
 \label{sec:rlvr}

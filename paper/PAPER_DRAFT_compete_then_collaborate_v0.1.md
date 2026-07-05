@@ -70,7 +70,9 @@ Held-out pass@1 (intersection-controlled, 197 shared problems):
 |---|---|---|---|---|
 | 7B (MBPP) | 76.7% | 74.0% | 70.0% | 69.3% |
 | 32B (MBPP) | 82.0% | 80.0% | 77.3% | 79.3% |
-All students fall **below base**; the teacher ranking is preserved (Claude least harmful). **Union** of all teachers (SFT) is also below base (MBPP 72.7%, competition **2.9%** vs base 5.9%). Imitation at this scale degrades already-competent coder models; the bottleneck is task *difficulty/headroom*, not model size (7B and 32B both degrade).
+All students fall **below base**, and the teacher ranking is preserved (Claude least harmful). The **union** of all teachers (SFT) is also below base (MBPP 72.7%, competition **2.9%** vs base 5.9%).
+
+Imitation at this scale degrades already-competent coder models; the bottleneck is task *difficulty/headroom*, not model size — 7B and 32B both degrade.
 
 ### 5.3 Collaboration mode B — verifiable-reward RL (RLVR) improves the student
 Same curriculum, competition held-out (base is weak here → large headroom):
