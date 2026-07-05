@@ -36,3 +36,6 @@ venv/
 *.blg
 *.out
 *.bbl
+
+# 내부 공개 체크리스트 (토큰경로 등 — 미공개)
+paper/PUBLICATION_CHECKLIST.md
