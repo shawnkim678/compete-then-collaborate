@@ -73,7 +73,7 @@ compete-then-collaborate/
 │   ├── taskbank_contests.jsonl          # code_contests d6–9 (150)
 │   └── taskbank_contests_heldout.jsonl  # disjoint competition held-out (68)
 ├── results/          # execution pass rates + RLVR learning curve (numbers, not outputs)
-├── paper/            # manuscript: main.tex, refs.bib, draft, build README
+├── paper/            # manuscript: main.tex (+ main_ko.tex Korean), main.pdf/main_ko.pdf, refs.bib
 ├── reproduce.py      # offline bank checks + verifier self-test; entry point
 ├── scan_secrets.sh   # value-based secret scanner (run before any commit)
 ├── TOS_COMPLIANCE.md # per-provider ToS analysis + release decisions D1–D6

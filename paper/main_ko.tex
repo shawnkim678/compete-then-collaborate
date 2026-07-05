@@ -1,0 +1,350 @@
+% Compete then Collaborate --- 한국어판 (XeTeX / tectonic 컴파일: tectonic main_ko.tex)
+% 폰트: Noto Serif CJK KR. 모델명·기술용어(RLVR/SFT/GRPO/LoRA/MBPP 등)는 관례상 영문 유지.
+\documentclass[11pt]{article}
+
+\usepackage{fontspec}
+\setmainfont{Noto Serif CJK KR}
+\setmonofont{DejaVu Sans Mono}[Scale=0.85]
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage[numbers,sort&compress]{natbib}
+\usepackage[hidelinks]{hyperref}
+\linespread{1.15}
+
+\title{경쟁 후 협력: 프런티어 AI 교사가 검증 가능 커리큘럼으로\\
+코딩 학생을 모방의 한계 너머로 향상시키다\\[4pt]
+\large\normalfont (Compete then Collaborate)}
+\author{Miseong (Shawn) Kim \\ \small Genesis Cortex AI Inc. \\ \small ORCID: \href{https://orcid.org/0009-0003-7566-3212}{0009-0003-7566-3212}}
+\date{초안 v0.2 (동료검토 반영), 2026}
+
+\begin{document}
+\maketitle
+
+\begin{center}
+\small\textbf{코드 · 데이터 · 테스트 · 검증 하네스:}
+\url{https://github.com/shawnkim678/compete-then-collaborate}\\[-2pt]
+\small\emph{본문의 모든 수치는 공개 산출물로 재계산하거나, 각자의 제공자 약관 하에 교사 풀이를 재생성하여 검증할 수 있다.}
+\end{center}
+
+\begin{abstract}
+대규모 언어모델(LLM)은 점차 소형 \emph{학생(student)} 모델의 학습 데이터를 생성하는
+\emph{교사(teacher)}로 활용되고 있다. 기존의 다중 교사 지식증류(knowledge distillation)는
+여러 교사의 출력을 병합할 뿐, \textbf{어느} 프런티어 모델이 가장 잘 가르치는가를 묻지 않으며,
+자기 출력을 선호하는 편향이 알려진 LLM 심판에 의존하는 경우가 많다. 본 연구는 네 개 주요
+연구소의 프런티어 AI 교사(Claude/Anthropic, Codex-GPT/OpenAI, Grok/xAI, Gemini/Google)를
+먼저 \emph{실행 기반} 심판(단위 테스트 / stdin--stdout 대조)과 공정성 통제(공유 태스크뱅크,
+교사 자기교정, 교집합 통제 학습셋)로 \textbf{정면 비교}한 뒤, 이들이 \textbf{협력}하여 단일
+코딩 학생(Qwen2.5-Coder)을 위한 \emph{검증 가능 커리큘럼}을 구축하는
+\textbf{경쟁 후 협력(compete-then-collaborate)} 프레임워크를 제안한다. 세 가지 발견을 보고한다.
+(1)~실행검증 하에서 네 교사 모두 자기교정 후 표준 문제를 거의 완벽하게($\approx$99--100\%)
+푼다 --- 이는 실력 차가 아니라 포화(saturation) 효과이다 --- 반면 더 어려운 경쟁 문제에서는
+서열이 드러난다(Gemini 77\%~$>$~Claude 69\%~$\approx$~Codex 69\%~$>$~Grok 50\%). 그럼에도
+가장 견고한 결과는 학생 측에 있으며 교사 서열에 의존하지 않는다. (2)~교사의 검증된 풀이를
+\textbf{모방(SFT)}하는 것은 이미 유능한 코딩 학생을 향상시키지 못하며 오히려 \textbf{저하}시킬
+수 있다(7B·32B 모두; 예: MBPP-test 76.7\%$\rightarrow$72.7\%, 경쟁 문제 5.9\%$\rightarrow$2.9\%,
+전체 교사 합집합 기준). (3)~\emph{동일한} 협력 커리큘럼을 \textbf{검증가능보상 강화학습(RLVR)}
+환경으로 사용하면 학생이 오히려 \textbf{향상}된다(held-out 경쟁 문제에서 1000 스텝 학습 동안
+5.9\%$\rightarrow$8.8\% 정점, 상대 +49\%)---SFT와 방향이 반전된다. 본 연구의 핵심 주장은,
+AI 교사 협력의 가치가 답을 모아 모방시키는 데 있지 않고, 학생이 스스로 실행하며 배우는
+\emph{검증 가능한 환경}을 함께 구축하는 데 있다는 것이다. NVIDIA GB10 상에서 GRPO를 구동하기
+위한 프레임워크 패치를 포함해 완전 재현 가능한 온프레미스 파이프라인을 공개한다.
+\end{abstract}
+
+\section{서론}
+유능한 ``교사'' LLM을 소형 ``학생'' 모델로 증류하는 것은 이제 표준적 관행이다. 그러나 두 가지
+질문이 충분히 탐구되지 않았다. (i)~\emph{어느} 상용 프런티어 모델이 더 나은 교사인가 ---
+LLM 심판이 아니라 학생의 실제 하위 성능으로 측정할 때; (ii)~여러 교사를 \emph{결합}하는 최선의
+방식은 답을 병합하는 것인가, 아니면 다른 기제가 있는가.
+
+우리는 이를 파이썬 코딩에서 연구한다. 우리의 심판은 \textbf{코드 실행}이다 --- 객관적이며,
+LLM 심판에서 문서화된 자기선호(self-preference) 편향으로부터 자유롭다. 먼저 \textbf{경쟁}을
+수행한다: 교사들이 공유 태스크뱅크를 풀고, 교사의 출력은 히든 테스트를 통과할 때에만 학생의
+데이터에 들어간다. 이어 \textbf{협력}을 수행한다: 교사들의 검증된 결과가 하나의 커리큘럼을
+이루며, 이를 두 방식으로 사용한다 --- 모방 목표(SFT)와 검증가능보상 강화학습 환경(RLVR).
+
+\paragraph{기여.}
+(1)~세 가지 공정성 통제(공유 태스크, 자기교정, 교집합)를 갖춘, 실행검증 기반의 편향 없는
+\textbf{프런티어 AI 교사 서열화}. (2)~모방-SFT가 유능한 코딩 학생에게 실패/저하를 낳는 반면
+검증가능보상 RL은 향상을 낳음을 보이는 \textbf{협력 방식의 통제 비교}. (3)~transformers~5.5 /
+torch~2.11 / cu130에서 GRPO를 구동하기 위한 프레임워크 패치를 포함한 \textbf{재현 가능한
+온프레미스(GB10) 파이프라인}.
+
+\section{관련 연구}
+\paragraph{다중 교사 지식증류.}
+선행 연구는 여러 교사의 근거(rationale)를 학생으로 병합하며, 교사를 무작정 늘리면 \emph{지식
+충돌(knowledge conflict)}로 인해 오히려 \emph{해로울} 수 있어 정제/통합이 필요함을 보고한다
+\citep{multiteacherkd}. 우리의 합집합-SFT 결과는 이 저하를 독립적으로 재현하지만, 우리의
+관점은 다르다: 우리는 모방을 위해 병합하지 않고 검증 가능한 환경을 구축한다.
+
+\paragraph{교사 선택 / LLM 심판.}
+여러 연구가 Claude와 GPT를 ``강한 교사''로 혼용하며, GPT-4가 평가 시 자기 생성물을 선호함을
+경고한다 \citep{rlhfbook}. 우리는 실행으로 심판함으로써 이 편향을 제거한다.
+
+\paragraph{온-폴리시 증류 \& RLVR.}
+온-폴리시 증류 \citep{minillm}와 대조적 증류 \citep{distillm2}는 모방을 개선하며, 검증가능보상
+강화학습은 최근 추론 모델의 기반이 된다. 우리는 이를 연결한다: 교사들이 협력적으로 검증한
+문제가 곧 RLVR의 보상 환경이 된다.
+
+\paragraph{가상/합성 데이터 기반 앙상블 학습(역사적 계보).}
+\emph{가상(virtual)}---합성 생성된---데이터로 학습한 앙상블이 개별 구성원을 능가할 수 있다는
+직관은 딥러닝 시대 이전으로 거슬러 올라간다: \citet{jang1999ola}는 1999년 POSTECH에서 가상
+데이터 기반 앙상블 학습 알고리즘을 제안하였다. 우리의 설정은 같은 직관의 현대적 구현이다 ---
+앙상블 구성원은 프런티어 LLM \emph{교사}이며, ``가상 데이터''는 실행검증된 합성 문제의
+커리큘럼이다. 다만 이는 방법이 아니라 계보의 연결이다 --- 1999년의 가상 데이터가 단일 예측기의
+앙상블 다양성을 증대시킨 반면, 우리의 검증된 문제는 정책 최적화(RLVR)를 위한 \emph{보상
+지형(reward landscape)}을 정의한다. 따라서 우리는 본 연구를 그 계보의 정신적 후예로 위치시킨다:
+앙상블 출력을 평균하지 않고, 협력적으로 검증된 커리큘럼을 강화학습 환경으로 사용한다는 점이
+전환점이다.
+
+\paragraph{공백.}
+실행검증으로 \emph{명명된 프런티어 모델을 교사로서 서열화}하고, \emph{모방 대 검증가능보상
+협력}을 대비하며, 이를 \emph{경쟁 후 협력} 파이프라인으로 묶은 연구는 찾지 못했다.
+
+\section{방법}
+\subsection{실행검증 생성(심판)}
+각 교사는 과제(함수 시그니처 또는 경쟁 문제)를 받아 추론과 하나의 코드 블록을 반환한다. 우리는
+코드를 추출하여 격리된 서브프로세스(자원 제한 $+$ 타임아웃)에서 \textbf{히든 테스트}(함수 과제는
+단위 테스트 assert, 경쟁 과제는 stdin/stdout)로 실행한다. 테스트를 통과한 풀이만 채택한다.
+따라서 정답성은 교사 모방이 아니라 실행에서 나온다.
+
+\subsection{공정성 통제를 갖춘 경쟁}
+(a)~\textbf{공유 태스크뱅크} --- 모든 교사가 동일 문제를 푼다(함수 시그니처 명시로 모호성 제거;
+외부 의존 과제는 함수 단위 비교의 타당성을 위해 제외). (b)~\textbf{자기교정} --- 실패한 과제는
+실패한 테스트 오류와 함께 최대 2회 교사에게 재제시하여, 답을 수정하는 교사를 모사한다(각 교사의
+커버리지를 높이고 ``한 번의 운'' 교란을 제거). (c)~\textbf{교집합 통제} --- 학생 학습셋을
+\emph{모든} 교사가 푼 문제로 제한하여 동일 문제·동일 개수를 부여하므로, 오직 풀이/설명의
+\emph{스타일}만 달라진다.
+
+\subsection{협력: 한 학생을 위한 두 방식}
+모든 교사의 검증된 풀이의 \textbf{합집합}이 협력 커리큘럼을 이룬다. 이를 두 방식으로 사용한다:
+\textbf{(SFT)} 병합된 풀이를 모방; \textbf{(RLVR)} 검증된 문제를, 보상 $=$ 통과 테스트 비율인
+GRPO 보상 환경으로 취급. 학생 $=$ Qwen2.5-Coder(주 7B, 보조 32B), LoRA.
+
+\section{실험 설정}
+\begin{itemize}
+  \item \textbf{학생}: Qwen2.5-Coder-7B / -32B, LoRA(bf16), GB10 128\,GB 통합메모리.
+  \item \textbf{교사}: Claude, Codex(GPT), Grok, Gemini(헤드리스 CLI; 4대 연구소 Anthropic,
+    OpenAI, xAI, Google). Gemini는 실행검증 \emph{경쟁} 서열에 참여하며, \emph{협력}
+    실험(SFT/RLVR)은 앞의 세 교사의 검증 풀이 합집합을 사용한다.
+  \item \textbf{태스크뱅크}: MBPP의 함수 과제(교습 split; MBPP-\emph{test}는 홀드아웃),
+    MBPP 참조 풀이 변이(mutation)를 통한 버그픽스 과제; \texttt{deepmind/code\_contests}의
+    경쟁 문제(난이도 6--9).
+  \item \textbf{홀드아웃 평가(누수 없음 검증)}: MBPP-test(150) 및 서로소인 경쟁 셋(68).
+    지표: 실행 pass@1.
+  \item \textbf{RLVR}: TRL GRPOTrainer $+$ PEFT(HF 경로; LoRA 자료형 버그로 Unsloth 커널 회피);
+    보상 $=$ 테스트 통과 비율 $+$ 소량의 형식 보너스; HF-generate 롤아웃(본 스택에서 vLLM 비호환).
+\end{itemize}
+
+\section{결과}
+\subsection{교사 경쟁(생성 pass@1)}
+\textbf{쉬운 문제(MBPP, 공유 200문항) --- 포화.}
+\begin{table}[h]\centering
+\begin{tabular}{lcc}
+\toprule
+교사 & one-shot & 자기교정 후 \\
+\midrule
+Claude & 96.5\% & \textbf{100\%} \\
+Grok   & 89.5\% & 99.5\% \\
+Codex  & 90.0\% & 99.0\% \\
+Gemini & 85.0\% & 99.5\% \\
+\bottomrule
+\end{tabular}
+\caption{쉬운 MBPP는 포화 상태이다. 네 교사 모두 자기교정 후 99--100\%에 도달하는데, 이는 실력이
+아니라 벤치마크 노출을 반영할 가능성이 크다.}
+\end{table}
+
+\textbf{어려운 문제(\texttt{code\_contests}, 난이도 6--9, 150문항) --- 정보량 있는 신호.}
+\begin{table}[h]\centering
+\begin{tabular}{lcc}
+\toprule
+교사 & pass@1(정답) & 코드추출 성공 \\
+\midrule
+Gemini & \textbf{77\%} (115/150)$^{\ddagger}$ & 100\%$^{\ddagger}$ \\
+Claude & 69\% (104/150)\textsuperscript{\S} & 96\% (144/150) \\
+Codex  & 69\% (103/150)          & 90\% \\
+Grok   & 50\% (75/150)$^{\dagger}$ & 73\% (109/150)$^{\dagger}$ \\
+\bottomrule
+\end{tabular}
+\caption{어려운 경쟁 문제는 교사를 분리한다: Gemini~$>$~Claude~$\approx$~Codex~$>$~Grok.
+Gemini가 $\approx$8\%p 앞서며, Claude와 Codex는 한 문항 차이 안에 있다.}
+\end{table}
+
+\paragraph{해석(v0.2, 동료검토 반영).}
+MBPP의 천장 근접 점수(99--100\%)는 \emph{벤치마크 포화 / 학습 노출}을 반영할 가능성이 크며
+---MBPP는 네 교사 모두가 접한 2021년 공개 벤치마크이다--- \textbf{실력 차가 아니다}. 따라서
+교사 서열을 MBPP에 근거하지 \textbf{않는다}.
+
+더 어려운 \texttt{code\_contests}에서 교사는 더 뚜렷이 분리된다:
+\textbf{Gemini 선두(77\%, 115/150), 이어 Claude(69\%)~$\approx$~Codex(69\%), 그리고 Grok(50\%)}.
+어려운 문제에서 특정 공급자의 모델이 유일하게 최고인 것은 아니다. Gemini가 $\approx$8\%p 앞서고
+Claude와 Codex는 한 문항 차이 안에 있다. 결정적으로 이 서열은 어떤 LLM 심판도 아닌 실행만으로
+산출되므로 \emph{자기선호/패밀리 편향이 설계상 배제}된다. 잔여 위험은 비대칭적 학습누수와
+CLI/파서 아티팩트이며, 이는 \ref{sec:limits}절에서 다룬다.
+
+\paragraph{공정성 보정.}
+우리는 실력 차가 아닌 세 가지 \emph{인프라} 아티팩트를 발견·보정하였으며, 각 교사에 동일하게
+적용하고 투명하게 보고한다:
+\begin{itemize}
+  \item \textbf{\S\ Claude} --- 첫 실행이 122/150에서 중단되었다. 남은 28문항을 완료하여(22
+    통과) 모든 교사를 동일한 150문항으로 채점하였고, Claude는 공정한 \textbf{69\%(104/150)}가
+    된다(중단 실행의 67\%(82/122)에서 상승).
+  \item \textbf{\ddag\ Gemini} --- 생성 도중 API 선불 크레딧이 소진되어 마지막 34/150문항이
+    과금 오류(429)로 무응답 처리되었다. 크레딧 복구 후 그 34문항만 재실행·병합하였다:
+    \textbf{77\%(115/150)}, 코드추출 100\%.
+  \item \textbf{\dag\ Grok} --- 초기에 배치 CLI 호출의 52\%가 빈 응답(타임아웃/불안정, 오답
+    아님)이었다. 빈응답 재시도를 추가하여 재측정하였다: \textbf{50\%(75/150)}, 추출
+    48\%$\to$73\%(109/150). 재시도 후에도 27\%(41/150)는 사용가능 코드를 내지 못했는데, CLI
+    불안정과 실제 난이도를 완전히 분리할 수 없어 폐기하지 않고 투명하게 보고한다. 따라서
+    Grok--Codex/Claude 격차(50\% 대 69\%)는 보수적(Grok에 유리한) 추정이다.
+\end{itemize}
+
+\subsection{협력 방식 A --- 모방(SFT)은 유능한 학생을 돕지 못한다}
+홀드아웃 pass@1(교집합 통제, 공유 197문항):
+\begin{table}[h]\centering
+\begin{tabular}{lcccc}
+\toprule
+학생 & base & $+$Claude & $+$Codex & $+$Grok \\
+\midrule
+7B (MBPP)  & 76.7\% & 74.0\% & 70.0\% & 69.3\% \\
+32B (MBPP) & 82.0\% & 80.0\% & 77.3\% & 79.3\% \\
+\bottomrule
+\end{tabular}
+\caption{모든 SFT 학생이 base \emph{이하}로 떨어진다. 교사 서열은 보존된다(Claude가 가장 덜
+해롭다).}
+\end{table}
+
+모든 학생이 \textbf{base 이하}로 떨어지며, 교사 서열은 보존된다(Claude가 가장 덜 해롭다).
+전체 교사 \textbf{합집합}(SFT) 역시 base 이하이다(MBPP 72.7\%, 경쟁 \textbf{2.9\%} 대 base 5.9\%).
+
+이 규모의 모방은 이미 유능한 코딩 모델을 저하시키며, 병목은 모델 크기가 아니라 과제의
+\emph{난이도/여지}이다 --- 7B와 32B 모두 저하된다.
+
+\subsection{협력 방식 B --- 검증가능보상 강화학습(RLVR)은 학생을 향상시킨다}
+\label{sec:rlvr}
+동일 커리큘럼, 경쟁 홀드아웃(base가 약해 여지가 큼):
+\begin{table}[h]\centering
+\begin{tabular}{lcc}
+\toprule
+방식 & 경쟁 base$\rightarrow$학생 & 방향 \\
+\midrule
+SFT(합집합)              & 5.9\% $\rightarrow$ 2.9\%          & $\downarrow$ 저하 \\
+RLVR(GRPO, 200 스텝)     & 5.9\% $\rightarrow$ 7.4\%          & $\uparrow$ 상대 +25\% \\
+\textbf{RLVR(GRPO, v2, 1000 스텝)} & 5.9\% $\rightarrow$ \textbf{8.8\%} 정점(1000에서 7.4\%) & $\uparrow$ \textbf{정점 상대 +49\%} \\
+\bottomrule
+\end{tabular}
+\caption{동일 데이터, 반대 방향: 모방은 저하시키고 검증가능보상 RL은 향상시킨다. v2 1000 스텝은
+250--750 스텝에서 8.8\% 정점을 이루고 후반에 7.4\%로 완만히 회귀한다.}
+\end{table}
+
+학습 보상은 초기 $\approx$0에서 후반 0.25--1.0로 상승하였고(학습셋 일반화), 홀드아웃도 향상되었다.
+\textbf{동일 데이터, SFT와 반대 방향이다.}
+
+\begin{figure}[h]\centering
+\begin{tikzpicture}
+\begin{axis}[
+    name=ax, width=0.85\linewidth, height=6cm,
+    xlabel={GRPO 스텝}, xmin=0, xmax=1000,
+    axis y line*=left, ylabel={학습 보상(평균)}, ymin=0, ymax=0.55,
+    grid=both, tick align=outside,
+    legend style={at={(0.5,-0.30)}, anchor=north, legend columns=2},
+]
+\addplot[thick, blue, mark=*] coordinates
+  {(0,0.217)(100,0.308)(200,0.373)(300,0.339)(400,0.394)(500,0.428)(600,0.371)(700,0.436)(800,0.417)(900,0.418)(1000,0.411)};
+\addlegendentry{학습 보상(평균, 좌축)}
+\addlegendimage{thick, red, dashed, mark=square*}
+\addlegendentry{held-out pass@1(우축)}
+\end{axis}
+\begin{axis}[
+    width=0.85\linewidth, height=6cm,
+    xmin=0, xmax=1000, hide x axis,
+    axis y line*=right, ylabel={held-out pass@1 (\%)}, ymin=0, ymax=12,
+]
+\addplot[thick, red, dashed, mark=square*] coordinates
+  {(0,5.9)(100,5.9)(250,8.8)(500,8.8)(750,8.8)(1000,7.4)};
+\end{axis}
+\end{tikzpicture}
+\caption{v2 학습곡선(1000 스텝). 좌/파랑: 로그된 학습 보상(평균), $0.22\to{\approx}0.43$ 상승 후
+정체. 우/빨강: 경쟁 68문항에 대한 체크포인트별 held-out pass@1 --- base 5.9\%(4/68)에서
+250--750 스텝의 8.8\%(6/68) 정체까지 상승, 1000 스텝에서 7.4\%(5/68)로 완만히 회귀. 정체 구간
+내 차이는 68문항 중 $\pm1$문항(표집 노이즈)에 해당하며, 견고한 신호는 base $\to$ RLVR($4\to5$--$6$/68)이다.}
+\end{figure}
+
+\section{논의}
+결과는 명료한 메시지를 준다: \textbf{AI 교사 협력의 가치는 답을 모아 모방시키는 데 있지 않고,
+학생이 스스로 실행하며 배우는 검증 가능한 환경을 함께 구축하는 데 있다.} 모방은 유능한 코더가
+이미 가진 \emph{스타일}을 전달할 뿐이나, RLVR은 검증된 성공에 보상함으로써 \emph{능력}을
+전달한다. 이는 재현된 다중 교사 KD 저하(지식 충돌)도 설명한다: 답을 병합하는 것은 학생의 모방
+상한을 넘을 수 없으나, 검증가능보상에 대한 RL은 이를 넘을 수 있다.
+
+\section{한계}
+\label{sec:limits}
+\begin{itemize}
+  \item \textbf{벤치마크 포화 / 학습 누수.} MBPP는 널리 알려진 2021년 벤치마크로, 교사의 천장
+    근접 점수(99--100\%)는 실력 차보다 학습셋 노출을 반영할 가능성이 크며, 따라서 안정적 서열
+    논의는 더 어려운 \texttt{code\_contests} 부분집합에 근거한다. 개별 테스트 항목이 특정 교사의
+    사전학습 코퍼스에 그대로 존재하는지는 검증하지 않았으며, 교사 간 비대칭 누수가 있다면 서열에
+    편향을 줄 수 있다.
+  \item \textbf{프롬프트/파서/CLI 대칭성.} 모든 교사가 하나의 프롬프트 템플릿과 하나의 코드추출
+    파서를 공유한다. Grok의 배치 CLI가 어려운 문제 호출의 52\%에서 빈 응답을 낸(타임아웃/불안정,
+    오답 아님) 공정성 아티팩트를 발견·보정하였으며, 빈응답 재시도를 추가하여 비교를 공정하게
+    하였다. 잔여 형식 우위가 있더라도 공유 파서와 보고된 추출 성공률로 그 범위가 제한된다.
+  \item \textbf{교사 서열은 학생 측 결과보다 약하다.} 어려운 부분집합에서 Gemini가 $\approx$8\%p
+    앞서고 Claude~$\approx$~Codex(한 문항 차이)이며 Grok이 뒤진다. Gemini 아래의 세부 순서는
+    표본 크기를 고려하면 약하게만 분리된다. 반면 \textbf{SFT 실패 / RLVR 성공의 반전은 견고하다}:
+    이는 \emph{학생}의 홀드아웃 성능 변화이며 교사 서열이나 어떤 LLM 심판에도 의존하지 않는다.
+  \item RLVR의 향상폭은 희소한 경쟁 보상 하에서 절대적으로는 완만하다. 1000 스텝 v2 실행은
+    홀드아웃 pass@1을 base 5.9\%에서 8.8\% 정체(250--750 스텝)로 향상시키고 1000 스텝에서 7.4\%로
+    완만히 회귀한다. 홀드아웃이 68문항뿐이라 정체 구간 내 차이($\pm1$문항)는 표집 노이즈 안에
+    있으므로, 정확한 정점보다 견고한 방향(base $\to$ RLVR, $4\to5$--$6$/68)을 보고하며 최종 스텝
+    대신 체크포인트 선택을 권장한다. 더 큰 홀드아웃은 이 추정을 더 정밀하게 할 것이다.
+  \item 단일 학생 계열(Qwen2.5-Coder), 단일 언어(Python).
+  \item \textbf{윤리 / 이용약관.} 본 연구는 \textbf{학술 연구}(벤치마킹·방법론 연구)이며, 어떤
+    공급자와도 경쟁하는 상용 모델의 개발·배포·증류가 아니다; 어떤 학습 모델도 제품으로 제공하지
+    않는다. 이 목적은 본 연구를 Anthropic(경쟁 제품/경쟁 모델 학습 금지) 및 OpenAI(OpenAI와
+    경쟁하는 모델 금지)의 \emph{경쟁 범위} 제한 밖에 둔다; Google Gemini 약관도 마찬가지로 경쟁
+    범위로 한정된다. 우리는 추가로 (i)~어떤 교사의 원시 출력도 재배포하지 \textbf{않으며},
+    (ii)~교사 출력으로 학습한 모델을 공개하지 \textbf{않고}, (iii)~핵심 RLVR 결과를 실행 보상과
+    공개 경쟁 문제에 기반하여 \textbf{교사 출력 증류 없이} 도출한다---이는 xAI의 출력 증류에 대한
+    행위 범위 제한도 함께 해소한다. 정답성은 교사 모방이 아니라 결정적 실행으로 심판되며, 공개된
+    태스크/테스트/하네스를 통해 누구든 모든 수치를 오프라인(공개 산출물 재검증)으로 또는 각자의
+    공급자 약관 하에서 교사 풀이를 재생성하여 재현할 수 있다.
+  \item 하드웨어: 장시간 RLVR 중 GPU GSP 타임아웃(Xid 119/154)으로 재부팅이 필요했으며, 롤아웃
+    강도 완화·체크포인트·Xid 감시로 대응한다.
+\end{itemize}
+
+\section{결론}
+프런티어 AI는 편향 없는 실행 기반 심판으로 교사로서 서열화될 수 있으며, 더 중요하게는 그들의
+협력이 \emph{강화학습용 검증 가능 커리큘럼}으로 표현될 때 모방이 실패하는 지점에서 코딩 학생을
+실제로 향상시킨다. 우리는 NVIDIA GB10에서 이를 재현하기 위한 전체 온프레미스 파이프라인과
+프레임워크 패치를 공개한다.
+
+\section*{재현성}
+모든 코드·태스크뱅크·히든 테스트·결과 및 본 논문은
+\url{https://github.com/shawnkim678/compete-then-collaborate}에서 공개한다. 독자는 보고된 모든
+수치를 오프라인(\texttt{python reproduce.py --check-banks --selftest})으로 재검증하거나, 각자의
+API 키와 공급자 약관 하에서 교사 풀이를 재생성할 수 있다; 우리는 어떤 교사 출력도 재배포하지
+않는다(윤리 진술 참조).
+
+\medskip\noindent
+스크립트: \texttt{verify\_code.py}, \texttt{verify\_stdio.py}, \texttt{build\_taskbank\_mbpp.py},
+\texttt{build\_contests\_bank.py}, \texttt{prof\_run.py}, \texttt{prof\_run\_stdio.py},
+\texttt{prof\_retry.py}, \texttt{equalize\_golden.py}, \texttt{eval\_code\_students.py},
+\texttt{grpo\_train.py}. 오케스트레이션(setsid): \texttt{grpo\_orchestrator.sh}. GB10 프레임워크
+패치(trl import 플래그, vLLM off, \texttt{PreTrainedModel.warnings\_issued}, Unsloth LoRA-자료형
+버그 회피를 위한 HF$+$PEFT)는 연구 로그 \S16--17에 문서화되어 있다.
+
+\section*{감사의 글}
+가상 데이터 기반 앙상블 학습에 관한 1999년 학위논문 \citep{jang1999ola}으로 본 연구의
+검증가능 커리큘럼 관점에 개념적 계보를 제공하고 연구 방향에 조언을 주신 장민(Min Jang) 박사
+(포항공과대학교, POSTECH)께 감사드린다. 본 논문에는 어떤 제3자 저작물도 재배포되지 않으며,
+해당 학위논문은 서지적으로만 인용된다.
+
+\bibliographystyle{plainnat}
+\bibliography{refs}
+
+\end{document}
