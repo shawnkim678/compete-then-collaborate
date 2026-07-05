@@ -21,3 +21,12 @@ gemini.key
 # 제3자 저작권 참고자료 (절대 커밋 금지)
 **/references/
 **/REFERENCE_ONLY_*
+
+# 빌드/실행 캐시 (커밋 금지)
+__pycache__/
+*.pyc
+*.pyo
+unsloth_compiled_cache/
+.venv/
+venv/
+*.egg-info/
