@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-# RLVR(GRPO) 코딩 학생 — 표준 HF+PEFT (Unsloth 커스텀커널 회피, bf16 일관).
-# 보상=실행검증(테스트 통과비율). vllm off(HF generate 롤아웃). 데이터=경쟁문제.
-# 사용: python grpo_train.py [--steps N] [--out DIR] [--gen G]
+# RLVR (GRPO) coding student — plain HF+PEFT (avoids Unsloth custom kernels; consistent bf16).
+# Reward = execution verification (fraction of tests passed). vLLM off (HF-generate rollouts). Data = competition problems.
+# Usage: python grpo_train.py [--steps N] [--out DIR] [--gen G]
 import os, sys, re, json, argparse
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 import torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_stdio import run_stdio
 
-BASE = "/home/smroot/models/qwen2.5-coder-7b"
-BANK = "/mnt/cluster/sft_golden/taskbank_contests.jsonl"
+BASE = "/home/smroot/models/qwen2.5-coder-7b"        # edit to your local model path
+BANK = "/mnt/cluster/sft_golden/taskbank_contests.jsonl"  # edit to your task-bank path
 BLOCK = re.compile(r"```(?:python)?\s*\n(.*?)```", re.DOTALL)
 
 def extract_code(text):
@@ -32,7 +32,7 @@ def _text_of(comp):
         return ""
 
 def reward_pass(completions, tests_io=None, **kwargs):
-    # 절대 None/nan 반환 금지(전 항목 float) — TRL nan-row 경고 버그 회피
+    # never return None/nan (every item must be a float) — avoids the TRL nan-row warning bug
     outs = []
     tio_list = tests_io if tests_io is not None else [None] * len(completions)
     for comp, tio in zip(completions, tio_list):
@@ -68,14 +68,14 @@ def main():
     from peft import LoraConfig
     from datasets import Dataset
     from trl import GRPOConfig, GRPOTrainer
-    # trl0.24 ↔ transformers5.5 호환 몽키패치: PreTrainedModel.warnings_issued 누락 보완
+    # trl 0.24 <-> transformers 5.5 compat monkeypatch: supply the missing PreTrainedModel.warnings_issued
     if not hasattr(transformers.PreTrainedModel, "warnings_issued"):
         transformers.PreTrainedModel.warnings_issued = {}
 
     rows = [json.loads(l) for l in open(BANK) if l.strip()]
     ds = Dataset.from_list([{"prompt": make_prompt(r["instruction"]), "tests_io": r["tests_io"]}
                             for r in rows if r.get("tests_io")])
-    print(f"[grpo] 데이터 {len(ds)}문제", flush=True)
+    print(f"[grpo] {len(ds)} problems", flush=True)
 
     tok = AutoTokenizer.from_pretrained(BASE)
     if tok.pad_token is None:
@@ -103,7 +103,7 @@ def main():
                           train_dataset=ds, peft_config=peft_config)
     trainer.train()
     trainer.save_model(a.out); tok.save_pretrained(a.out)
-    print(f"[grpo] 완료 → {a.out}", flush=True)
+    print(f"[grpo] done -> {a.out}", flush=True)
 
 if __name__ == "__main__":
     main()

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# 경쟁문제(stdin/stdout) 채점 — 프로그램을 각 테스트 input으로 실행해 output 일치 검사.
-# run_stdio(code, tests) : tests=[(input_str, expected_out), ...] → (ok, detail)
+# Competition-problem (stdin/stdout) judge — run the program on each test input and compare output.
+# run_stdio(code, tests) : tests=[(input_str, expected_out), ...] -> (ok, detail)
 import sys, os, subprocess, tempfile
 
 def _norm(s):
-    # 줄별 trailing 공백 제거 + 마지막 개행 무시
+    # strip trailing whitespace per line + ignore trailing newlines
     return "\n".join(line.rstrip() for line in s.replace("\r\n", "\n").split("\n")).rstrip("\n")
 
 def run_stdio(code, tests, timeout=8, per_case=True):
@@ -33,7 +33,7 @@ def run_stdio(code, tests, timeout=8, per_case=True):
 
 if __name__ == "__main__":
     import json
-    # 자체 테스트
+    # self-test
     code = "n=int(input())\nfor _ in range(n):\n s=input().strip()\n bal=0;ok=True\n for c in s:\n  bal+= 1 if c=='(' else -1\n  if bal<0: ok=False;break\n print('YES' if ok and bal==0 else 'NO')"
     tests = [("3\n((()))\n(())()\n()((", "YES\nYES\nNO")]
     print(run_stdio(code, tests))

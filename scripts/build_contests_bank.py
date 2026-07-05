@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# 경쟁문제 태스크뱅크 (deepmind/code_contests) — 어려운 난이도로 headroom 확보.
-# 각 태스크: {task_id, category='contest', difficulty, instruction(description), tests=[[in,out],...]}
-# 테스트=public_tests(+generated 일부). stdin/stdout.
+# Competition-problem task bank (deepmind/code_contests) — hard difficulties for real headroom.
+# Each task: {task_id, category='contest', difficulty, instruction(description), tests=[[in,out],...]}
+# Tests = public_tests (+ some generated). stdin/stdout.
 import os, sys, json, argparse
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 from datasets import load_dataset
@@ -43,7 +43,7 @@ def main():
             f.write(json.dumps(t, ensure_ascii=False) + "\n")
     import statistics
     diffs = [t["difficulty"] for t in tasks]
-    print(f"경쟁문제 {len(tasks)}개 → {a.out}.jsonl (난이도 {min(diffs)}~{max(diffs)}, 평균 {statistics.mean(diffs):.1f})")
+    print(f"competition tasks: {len(tasks)} -> {a.out}.jsonl (difficulty {min(diffs)}-{max(diffs)}, mean {statistics.mean(diffs):.1f})")
 
 if __name__ == "__main__":
     main()

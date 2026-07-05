@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# Gemini(flagship) 헤드리스 호출 — 4번째 교수. 키는 env(GEMINI_API_KEY)로만, 하드코딩 금지.
-# 사용: GEMINI_API_KEY=... python gemini_cli.py "<PROMPT>"  (또는 stdin)
+# Gemini (flagship) headless caller — the 4th teacher. Key comes from env (GEMINI_API_KEY) only; never hard-code.
+# Usage: GEMINI_API_KEY=... python gemini_cli.py "<PROMPT>"  (or via stdin)
 import os, sys
 
 def main():

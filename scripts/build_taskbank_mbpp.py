@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-# 대규모 공유 태스크뱅크 빌더 (MBPP 기반).
-#  - 알고리즘: MBPP teaching split(train+validation+prompt) 임포트. MBPP 'test' split은 평가용 홀드아웃(누수방지).
-#  - 버그픽스: MBPP 참조풀이에 버그 주입(mutation) → 원본테스트가 실패로 잡는 것만 채택.
-# 모든 태스크는 참조풀이+히든테스트로 건전성 자동검증. 산출: taskbank_full(.jsonl/_ref.jsonl)
+# Large shared task-bank builder (MBPP-based).
+#  - algorithm: import the MBPP teaching split (train+validation+prompt). The MBPP 'test' split is the eval held-out (no leakage).
+#  - bugfix   : inject a bug (mutation) into the MBPP reference solution -> keep only mutations the original tests catch.
+# Every task is auto-validated for soundness with reference solution + hidden tests. Output: taskbank_full(.jsonl/_ref.jsonl)
 import os, sys, json, re, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_code import run_one
@@ -12,17 +12,17 @@ from datasets import load_dataset
 RID = "google-research-datasets/mbpp"
 
 def split_tests(rec):
-    """예시 테스트 1개(교수에 공개) + 히든 검증테스트(나머지) 분리. 함수명 애매성 제거."""
+    """Split one example test (shown to the teacher) from the hidden verification tests (the rest). Removes function-name ambiguity."""
     setup = (rec.get("test_setup_code") or "").strip()
     tl = list(rec.get("test_list") or [])
     if not tl:
         return "", ""
     example = tl[0]
-    hidden_body = "\n".join(tl[1:] if len(tl) > 1 else tl)  # 테스트 1개뿐이면 그걸로 검증
+    hidden_body = "\n".join(tl[1:] if len(tl) > 1 else tl)  # if there is only one test, verify with it
     hidden = (setup + "\n" + hidden_body).strip()
     return example, hidden
 
-# 버그 주입: 텍스트 단위 변이(한 번에 하나). 원본 테스트를 깨는 첫 변이를 채택.
+# Bug injection: text-level mutation (one at a time). Keep the first mutation that breaks the original tests.
 MUTATIONS = [
     (r'(?<![=!<>])==', '!='), (r'!=', '=='),
     (r'<=', '<'), (r'>=', '>'), (r'(?<![<>=])<(?![=])', '<='), (r'(?<![<>=])>(?![=])', '>='),
@@ -37,9 +37,9 @@ def make_bug(code, tests):
             continue
         ok_orig, _ = run_one(code, tests, 8, 6, 512)
         if not ok_orig:
-            return None  # 원본이 안 돌면 스킵
+            return None  # skip if the original does not run
         ok_bug, _ = run_one(new, tests, 8, 6, 512)
-        if not ok_bug:   # 변이가 테스트를 깬다 = 유효 버그
+        if not ok_bug:   # the mutation breaks the tests = a valid bug
             return new
     return None
 
@@ -57,13 +57,13 @@ def main():
         try:
             teach += list(load_dataset(RID, split=sp))
         except Exception as e:
-            print(f"  ({sp} 스킵: {str(e)[:60]})")
-    print(f"MBPP teaching 후보 {len(teach)}문항 (test split은 평가용 홀드아웃)")
+            print(f"  (skip {sp}: {str(e)[:60]})")
+    print(f"MBPP teaching candidates: {len(teach)} tasks (the test split is the eval held-out)")
 
     algo, bug = [], []
     skipped_setup = 0
     for rec in teach:
-        # test_setup_code(외부 클래스/전역 의존, 예: class Pair) 태스크 제외 → 순수 함수 비교(공정)
+        # exclude tasks with test_setup_code (external class / global deps, e.g. class Pair) -> pure-function comparison (fair)
         if (rec.get("test_setup_code") or "").strip():
             skipped_setup += 1
             continue
@@ -71,14 +71,14 @@ def main():
         example, tests = split_tests(rec)
         if not code or not tests or not example:
             continue
-        # 건전성: 참조풀이가 히든테스트 통과?
+        # soundness: does the reference solution pass the hidden tests?
         ok, _ = run_one(code, tests, 8, 6, 512)
         if not ok:
             continue
         tid = f"mbpp{rec['task_id']}"
         instr = (rec.get("text") or "").strip()
-        # 함수 시그니처 명시(예시 테스트 1개) → 함수명 애매성 제거(공정)
-        instr_algo = instr + "\n\n함수 시그니처는 다음 예시와 정확히 일치해야 합니다(같은 함수명·인자 순서):\n" + example
+        # state the function signature (one example test) -> removes function-name ambiguity (fair)
+        instr_algo = instr + "\n\nThe function signature must exactly match the following example (same function name and argument order):\n" + example
         if len(algo) < a.n_algo:
             algo.append({"task_id": f"{tid}_a", "category": "algorithm",
                          "instruction": instr_algo, "input": "", "tests": tests, "_ref": code})
@@ -86,7 +86,7 @@ def main():
             buggy = make_bug(code, tests)
             if buggy:
                 bug.append({"task_id": f"{tid}_b", "category": "bugfix",
-                            "instruction": "아래 파이썬 코드에는 버그가 있다. 원래 의도(문제 설명 참고)대로 동작하도록 고치시오. 문제: " + instr,
+                            "instruction": "The Python code below has a bug. Fix it so it behaves as intended (see the problem description). Problem: " + instr,
                             "input": buggy, "tests": tests, "_ref": code})
         if len(algo) >= a.n_algo and len(bug) >= a.n_bug:
             break
@@ -97,7 +97,7 @@ def main():
             pub = {k: r[k] for k in ("task_id", "category", "instruction", "input", "tests")}
             f.write(json.dumps(pub, ensure_ascii=False) + "\n")
             fr.write(json.dumps({**pub, "professor": "_ref", "output": r["_ref"], "solution_code": r["_ref"]}, ensure_ascii=False) + "\n")
-    print(f"태스크뱅크_full: 알고리즘 {len(algo)} + 버그픽스 {len(bug)} = {len(T)}문항 → {a.out}.jsonl")
+    print(f"taskbank_full: algorithm {len(algo)} + bugfix {len(bug)} = {len(T)} tasks -> {a.out}.jsonl")
 
 if __name__ == "__main__":
     main()

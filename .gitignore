@@ -1,15 +1,15 @@
-# ToS: 교사 원시 출력 절대 커밋 금지 (D1)
+# ToS: never commit raw teacher outputs (D1)
 *_gold_raw.jsonl
 data/teacher_outputs/
-# 자격증명
+# credentials
 *.key
 *api*key*
 .env
-# 교사출력 학습 학생 가중치 (D3)
+# student weights trained on teacher outputs (D3)
 legal-code-*-v1/
 legal-code-union-*/
 *_ckpt/
-# ★ API 키 유출 방지 (Gemini 등)
+# API key leak prevention (Gemini etc.)
 gemini.txt
 gemini.key
 *.key
@@ -18,11 +18,11 @@ gemini.key
 *token*
 *secret*
 
-# 제3자 저작권 참고자료 (절대 커밋 금지)
+# third-party copyrighted references (never commit)
 **/references/
 **/REFERENCE_ONLY_*
 
-# 빌드/실행 캐시 (커밋 금지)
+# build / run caches (do not commit)
 __pycache__/
 *.pyc
 *.pyo

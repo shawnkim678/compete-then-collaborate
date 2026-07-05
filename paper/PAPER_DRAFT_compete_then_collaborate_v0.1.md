@@ -1,6 +1,6 @@
 # Compete then Collaborate: Frontier AI Teachers Build a Verifiable Curriculum to Improve a Coding Student Beyond Imitation
 
-*Draft v0.2 (peer-review revised) — Genesis (DGX Spark GB10), 2026-07-04. Companion to research log `AI교수진_코딩교습_비교연구_v1`.*
+*Draft v0.2 (peer-review revised) — Genesis (DGX Spark GB10), 2026-07-04. Companion to an internal research log (not included in this release).*
 *Status: results final, including the four-teacher competition (Claude/Codex/Grok/Gemini) and the v2 1000-step RLVR learning curve with per-checkpoint held-out evaluation.*
 
 ## Abstract

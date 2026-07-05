@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
-# 코딩 골든셋 실행검증 하네스 (교수진 비교연구용, stdlib 전용)
-# 각 샘플: solution_code + tests 를 격리 서브프로세스로 실행 → 통과분만 골든셋 채택.
-# 사용: python verify_code.py <in.jsonl> <out_golden.jsonl> [--timeout 10]
+# Execution-verification harness for the coding golden set (teacher-comparison study; stdlib only).
+# Each sample: run (solution_code + tests) in an isolated subprocess -> keep only test-passing ones.
+# Usage: python verify_code.py <in.jsonl> <out_golden.jsonl> [--timeout 10]
 #
-# 입력 레코드 스키마(교수가 생성):
+# Input record schema (produced by a teacher):
 #   {task_id, professor, category, instruction, input, output, solution_code, tests}
-#     - output       : SFT 학습 타깃(추론+코드, 사람이 읽는 교습답)
-#     - solution_code: 실행가능 코드(함수정의 등)
-#     - tests        : assert 기반 검증코드 (solution_code 뒤에 붙여 실행)
-# 통과 기준: (solution_code + tests) 서브프로세스 실행이 예외 없이 종료.
+#     - output       : SFT training target (reasoning + code, the human-readable answer)
+#     - solution_code: runnable code (function definitions, etc.)
+#     - tests        : assert-based verification code (appended after solution_code and run)
+# Pass criterion: the (solution_code + tests) subprocess exits without raising an exception.
 import sys, os, json, subprocess, tempfile, argparse, textwrap
 
 RUNNER = textwrap.dedent('''
     import resource, sys
-    # 리소스 제한: CPU {cpu}s, 메모리 {mem}MB
+    # resource limits: CPU {cpu}s, memory {mem}MB
     try:
         resource.setrlimit(resource.RLIMIT_CPU, ({cpu}, {cpu}))
         resource.setrlimit(resource.RLIMIT_AS, ({mem}*1024*1024, {mem}*1024*1024))
@@ -65,7 +65,7 @@ def main():
             if ok:
                 passed += 1
                 bycat[cat][0] += 1
-                # 학습용 필드만 저장
+                # keep only the training fields
                 fout.write(json.dumps({
                     "instruction": r["instruction"],
                     "input": r.get("input", ""),
@@ -76,7 +76,7 @@ def main():
             else:
                 print(f"  FAIL {tid} [{cat}] :: {err.splitlines()[-1] if err else ''}")
 
-    print(f"\n=== 검증결과: {passed}/{n} 통과 → {a.out} ===")
+    print(f"\n=== verification result: {passed}/{n} passed -> {a.out} ===")
     for c, (p, t) in sorted(bycat.items()):
         print(f"    {c}: {p}/{t}")
 

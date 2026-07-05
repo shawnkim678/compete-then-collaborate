@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-# 교수 실행 래퍼 — 공유 태스크뱅크를 한 교수가 풀게 하고 히든테스트로 채점.
-# 동일 프롬프트(공정) → CLI 호출 → 파이썬 코드블록 추출 → verify_code.run_one 검증 → 통과분만 골든셋.
-# 사용: python prof_run.py --professor claude|codex|grok --bank taskbank.jsonl --out <prof>.jsonl
+# Teacher-runner wrapper — one teacher solves the shared task bank, graded by hidden tests.
+# Same prompt (fair) -> CLI call -> extract python code block -> verify with verify_code.run_one -> keep only passing ones.
+# Usage: python prof_run.py --professor claude|codex|grok --bank taskbank.jsonl --out <prof>.jsonl
 import sys, os, json, re, subprocess, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_code import run_one   # 동일 격리실행 검증
+from verify_code import run_one   # same isolated-execution verifier
 
 import os as _os
 _HERE = _os.path.dirname(_os.path.abspath(__file__))
@@ -12,7 +12,7 @@ CMD = {
     "claude": lambda p: ["claude", "-p", p],
     "codex":  lambda p: ["codex", "exec", "--skip-git-repo-check", p],
     "grok":   lambda p: ["grok", "-p", p],
-    "gemini": lambda p: ["python3", _os.path.join(_HERE, "gemini_cli.py"), p],  # 4번째 교수(flagship, 키는 env)
+    "gemini": lambda p: ["python3", _os.path.join(_HERE, "gemini_cli.py"), p],  # 4th teacher (flagship, key from env)
 }
 
 def build_prompt(task):
@@ -30,11 +30,11 @@ def extract_code(text):
     blocks = BLOCK.findall(text or "")
     if not blocks:
         return ""
-    # 마지막 코드블록(버그픽스에서 최종 수정본) 채택
+    # take the last code block (final corrected version for bugfix)
     return blocks[-1].strip()
 
 def call(professor, prompt, timeout=180, retries=2):
-    # 빈 응답(타임아웃/CLI 불안정) 시 재시도 → 교수 간 공정성(특히 grok 배치 빈응답 방지)
+    # retry on empty response (timeout / flaky CLI) -> fairness across teachers (esp. avoid Grok batch empties)
     last = ""
     for attempt in range(retries + 1):
         try:
@@ -42,11 +42,11 @@ def call(professor, prompt, timeout=180, retries=2):
                                timeout=timeout, stdin=subprocess.DEVNULL)
             out = (r.stdout or "") + ("\n" + r.stderr if r.returncode != 0 else "")
             last = out
-            if out.strip() and "```" in out:   # 코드블록 확보 → 즉시 반환
+            if out.strip() and "```" in out:   # got a code block -> return immediately
                 return out
         except subprocess.TimeoutExpired:
             last = ""
-        # 빈 응답/코드없음 → 재시도
+        # empty response / no code -> retry
     return last
 
 def main():
@@ -81,7 +81,7 @@ def main():
                 print(f"  PASS {tid} [{cat}]", flush=True)
             else:
                 print(f"  FAIL {tid} [{cat}] :: {(err.splitlines()[-1] if err else '')[:80]}", flush=True)
-    print(f"\n=== [{a.professor}] {passed}/{n} 통과 → {a.out} ===")
+    print(f"\n=== [{a.professor}] {passed}/{n} passed -> {a.out} ===")
     for c,(p,t) in sorted(bycat.items()):
         print(f"    {c}: {p}/{t}")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-# 코딩 학생 held-out 평가 — 모델이 직접 생성 → 실행검증 → pass@1.
-# 베이스(무어댑터) 및 교수별 학생 어댑터를 동일 held-out으로 평가(공정).
-# 사용: python eval_code_students.py --base <dir> [--adapter <dir>] --bank heldout.jsonl --label <name> --out res.jsonl
+# Held-out evaluation of the coding student — the model generates directly -> execution-verified -> pass@1.
+# Evaluates the base (no adapter) and per-teacher student adapters on the same held-out set (fair).
+# Usage: python eval_code_students.py --base <dir> [--adapter <dir>] --bank heldout.jsonl --label <name> --out res.jsonl
 import sys, os, re, json, argparse, gc, torch
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_code import run_one
@@ -46,7 +46,7 @@ def main():
             if not line: continue
             task = json.loads(line); n += 1
             cat = task["category"]; bycat.setdefault(cat, [0, 0]); bycat[cat][1] += 1
-            stdio = "tests_io" in task  # 경쟁문제=stdin/stdout
+            stdio = "tests_io" in task  # competition problem = stdin/stdout
             prompt = build_prompt_stdio(task) if stdio else build_prompt(task)
             code = extract_code(gen(model, tok, prompt, max_new=512 if stdio else 320))
             if not code:
@@ -65,7 +65,7 @@ def main():
     for c, (p, t) in sorted(bycat.items()):
         line += f" | {c} {p}/{t}"
     print(line, flush=True)
-    # 요약 append
+    # append summary
     with open(a.scores, "a") as sf:
         sf.write(f"| {a.label} | {rate:.1f}% | " + " | ".join(f"{c}:{p}/{t}" for c,(p,t) in sorted(bycat.items())) + " |\n")
 

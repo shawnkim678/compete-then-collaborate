@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-# 경쟁문제(stdin/stdout) 교수 러너 — 교수가 프로그램 작성 → public_tests로 채점.
-# 사용: python prof_run_stdio.py --professor claude|codex|grok --bank taskbank_contests.jsonl --out <prof>_cc.jsonl
+# Competition-problem (stdin/stdout) teacher runner — teacher writes a program, graded by public_tests.
+# Usage: python prof_run_stdio.py --professor claude|codex|grok --bank taskbank_contests.jsonl --out <prof>_cc.jsonl
 import sys, os, json, argparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_stdio import run_stdio
@@ -34,18 +34,18 @@ def main():
             tests = [(t[0], t[1]) for t in task["tests_io"]]
             ok, detail = run_stdio(code, tests, timeout=8) if code else (False, "NO_CODE")
             fr.write(json.dumps({"task_id": task["task_id"], "code": code, "detail": detail}, ensure_ascii=False) + "\n")
-            fr.flush()   # 강제종료 대비 즉시 기록(NFS 버퍼링 방지)
+            fr.flush()   # flush immediately to survive a hard kill (avoid NFS buffering)
             if ok:
                 passed += 1
                 fo.write(json.dumps({"instruction": task["instruction"], "input": "",
                                      "output": text.strip(), "task_id": task["task_id"],
                                      "professor": a.professor, "category": "contest",
                                      "difficulty": task.get("difficulty")}, ensure_ascii=False) + "\n")
-                fo.flush()   # 통과분 즉시 기록
+                fo.flush()   # write passing items immediately
                 print(f"  PASS {task['task_id']} (d{task.get('difficulty')})", flush=True)
             else:
                 print(f"  FAIL {task['task_id']} :: {detail}", flush=True)
-    print(f"\n=== [{a.professor}] 경쟁문제 {passed}/{n} 통과 ({100*passed/max(n,1):.1f}%) ===", flush=True)
+    print(f"\n=== [{a.professor}] competition {passed}/{n} passed ({100*passed/max(n,1):.1f}%) ===", flush=True)
 
 if __name__ == "__main__":
     main()
