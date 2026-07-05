@@ -1,0 +1,23 @@
+# ToS: 교사 원시 출력 절대 커밋 금지 (D1)
+*_gold_raw.jsonl
+data/teacher_outputs/
+# 자격증명
+*.key
+*api*key*
+.env
+# 교사출력 학습 학생 가중치 (D3)
+legal-code-*-v1/
+legal-code-union-*/
+*_ckpt/
+# ★ API 키 유출 방지 (Gemini 등)
+gemini.txt
+gemini.key
+*.key
+.genesis_secrets/
+**/gemini.txt
+*token*
+*secret*
+
+# 제3자 저작권 참고자료 (절대 커밋 금지)
+**/references/
+**/REFERENCE_ONLY_*
