@@ -16,8 +16,8 @@ All numbers come from executing code against hidden tests — no LLM judge, no t
 | Teacher | pass@1 | code-extraction |
 |---|---|---|
 | Gemini | 77% (115/150) | 100% |
+| Claude | 69% (104/150) | 96% (144/150) |
 | Codex | 69% (103/150) | 90% |
-| Claude | 67% (82/122) | 96% |
 | Grok | 50% (75/150) | 73% |
 
 Fairness notes: Grok's and Gemini's first runs hit infrastructure artifacts (empty CLI

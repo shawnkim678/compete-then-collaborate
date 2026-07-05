@@ -40,7 +40,7 @@ and then \textbf{collaborate} to build a \emph{verifiable curriculum} for a sing
 student (Qwen2.5-Coder). We report three findings. (1)~Under execution verification, all four
 teachers solve standard problems near-perfectly after self-correction ($\approx$99--100\%)
 --- a saturation effect, not a skill difference --- while harder competition problems separate
-them (Gemini 77\%~$>$~Codex 69\%~$\approx$~Claude 67\%~$>$~Grok 50\%); still, the most robust
+them (Gemini 77\%~$>$~Claude 69\%~$\approx$~Codex 69\%~$>$~Grok 50\%); still, the most robust
 results are on the student side and do not depend on the teacher ranking. (2)~\textbf{Imitation
 (SFT) on the teachers' verified solutions does not improve --- and can degrade --- an
 already-competent coder student} at both 7B and 32B (e.g., 76.7\%$\rightarrow$72.7\% on
@@ -175,13 +175,13 @@ reflecting benchmark exposure rather than skill.}
 Teacher & pass@1 (solve) & code-extraction success \\
 \midrule
 Gemini & \textbf{77\%} (115/150)$^{\ddagger}$ & 100\%$^{\ddagger}$ \\
+Claude & 69\% (104/150)\textsuperscript{\S} & 96\% (144/150) \\
 Codex  & 69\% (103/150)          & 90\% \\
-Claude & 67\% (82/122)           & 96\% \\
 Grok   & 50\% (75/150)$^{\dagger}$ & 73\% (109/150)$^{\dagger}$ \\
 \bottomrule
 \end{tabular}
-\caption{Hard competition problems separate the teachers: Gemini~$>$~Codex~$\approx$~Claude~$>$~Grok.
-No single vendor is uniquely best; Claude is not the top solver on hard problems.}
+\caption{Hard competition problems separate the teachers: Gemini~$>$~Claude~$\approx$~Codex~$>$~Grok.
+Gemini leads by $\approx$8 points; Claude and Codex are within one problem of each other.}
 \end{table}
 
 \paragraph{Interpretation (v0.2, addressing peer review).}
@@ -189,9 +189,12 @@ MBPP near-ceiling scores (99--100\%) most likely reflect \emph{benchmark saturat
 exposure} (MBPP is a public 2021 benchmark seen by all teachers), \textbf{not} differential
 skill; we therefore do \textbf{not} rest the teacher ranking on MBPP. On the harder
 \texttt{code\_contests} set the picture differs and separates the teachers more clearly:
-\textbf{Gemini leads (77\%, 115/150), then Codex (69\%)~$\approx$~Claude (67\%), then Grok (50\%)},
-i.e.\ no single vendor's model is uniquely best and Claude is \emph{not} the top solver on hard
-problems. $^{\ddagger}$Gemini's competition run hit the same class of infrastructure artifact as
+\textbf{Gemini leads (77\%, 115/150), then Claude (69\%)~$\approx$~Codex (69\%), then Grok (50\%)},
+i.e.\ no single vendor's model is uniquely best on hard problems; Gemini is ahead by $\approx$8
+points while Claude and Codex are within one problem of each other. \textsuperscript{\S}Claude's first run was
+interrupted at 122/150 problems; we completed the remaining 28 (22 passed) so every teacher is
+scored on the same 150, giving Claude a fair 69\% (104/150) --- up from an incomplete-run 67\%
+(82/122). $^{\ddagger}$Gemini's competition run hit the same class of infrastructure artifact as
 Grok's: its API prepaid credits were depleted partway through generation, so the final 34/150
 problems returned billing errors (429) counted as no-code. After credits were restored we re-ran
 exactly those 34 items and merged them; Gemini's fair pass@1 is 77\% (115/150) with 100\%
@@ -304,11 +307,11 @@ imitation ceiling, whereas RL against verifiable rewards can.
     returned empty for 52\% of hard-problem calls (timeout/flakiness, not wrong code); after
     adding empty-response retries the comparison is fair. Residual formatting advantages, if any,
     are bounded by the shared parser and reported extraction-success rates.
-  \item \textbf{The teacher ranking is weaker than the student-side result.} Because of
-    saturation and the above artifacts, ``which teacher is best'' is only weakly supported on the
-    hard subset (Codex~$\approx$~Claude). By contrast, the \textbf{SFT-fails / RLVR-succeeds
-    reversal is robust}: it is a change in the \emph{student's} held-out performance and does not
-    depend on the teacher ranking or on any LLM judge.
+  \item \textbf{The teacher ranking is weaker than the student-side result.} On the hard subset
+    Gemini leads by $\approx$8 points, while Claude~$\approx$~Codex (within one problem) and Grok
+    trails; the fine ordering below Gemini is only weakly separated given the sample size. By
+    contrast, the \textbf{SFT-fails / RLVR-succeeds reversal is robust}: it is a change in the
+    \emph{student's} held-out performance and does not depend on the teacher ranking or on any LLM judge.
   \item RLVR gains are modest in absolute terms with sparse competition rewards. The 1000-step
     v2 run improves held-out pass@1 from a 5.9\% base to an 8.8\% plateau (steps 250--750) with a
     mild late regression to 7.4\% at step 1000; because the held-out set has only 68 problems,
