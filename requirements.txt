@@ -1,0 +1,18 @@
+# Compete-then-Collaborate — pinned to the versions used in the paper.
+# NOTE: torch 2.11.0+cu130 is a CUDA-13.0 build for NVIDIA GB10 (Grace-Blackwell, sm_121).
+# On other GPUs, install the torch build matching your CUDA, then the rest.
+#   pip install torch==2.11.0 --index-url https://download.pytorch.org/whl/cu130   # adjust cuXXX
+#   pip install -r requirements.txt
+
+torch==2.11.0
+transformers==5.5.0
+trl==0.24.0
+peft==0.19.1
+datasets>=2.19
+accelerate>=0.34
+
+# optional: only needed to re-train with Unsloth kernels (we use the HF+PEFT path in grpo_train.py)
+# unsloth==2026.6.9
+
+# optional: only needed to regenerate teacher solutions from Google Gemini (path 2)
+# google-genai>=0.3
