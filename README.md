@@ -157,7 +157,7 @@ per-provider analysis and decisions D1–D6: [`TOS_COMPLIANCE.md`](TOS_COMPLIANC
 @misc{competethencollaborate2026,
   title  = {Compete then Collaborate: Frontier AI Teachers Build a Verifiable Curriculum
             to Improve a Coding Student Beyond Imitation},
-  author = {Kim, Miseong and Kim, Shawn},
+  author = {Kim, Miseong Shawn},
   year   = {2026},
   note   = {Preprint. Code: https://github.com/shawnkim678/compete-then-collaborate},
 }
