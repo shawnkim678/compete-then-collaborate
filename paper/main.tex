@@ -21,7 +21,7 @@
 \title{Compete then Collaborate: Frontier AI Teachers Build a\\
 Verifiable Curriculum to Improve a Coding Student Beyond Imitation}
 \author{Miseong (Shawn) Kim \\ \small Genesis Cortex AI Inc. \\ \small ORCID: \href{https://orcid.org/0009-0003-7566-3212}{0009-0003-7566-3212}}
-\date{Draft v0.2 (peer-review revised), 2026}
+\date{July 2026}
 
 \begin{document}
 \maketitle
@@ -372,11 +372,14 @@ flags, vllm-off, \texttt{PreTrainedModel.warnings\_issued}, HF$+$PEFT to avoid t
 LoRA-dtype bug) documented in the research log \S16--17.
 
 \section*{Acknowledgments}
-We thank Dr.\ Min Jang (Pohang University of Science and Technology, POSTECH) whose 1999
-dissertation on ensemble learning with virtual data \citep{jang1999ola} provided the conceptual
-lineage for the verifiable-curriculum framing developed here, and for guidance on positioning
-this work. No third-party copyrighted material is redistributed with this paper; the referenced
-dissertation is cited bibliographically only.
+We thank Dr.\ Min Jang (Pohang University of Science and Technology, POSTECH),
+whose 1999 dissertation on ensemble learning with virtual data \citep{jang1999ola}
+provided the conceptual lineage for the verifiable-curriculum framing developed here.
+In his review of an earlier draft, Dr.\ Jang highlighted the engineering contributions
+of the reported system as its principal strengths --- the stack-level debugging on the
+NVIDIA GB10 platform, the CLI orchestration across four commercial LLMs, and the
+execution sandbox. No third-party copyrighted material is redistributed with this
+paper; the referenced dissertation is cited bibliographically only.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}
