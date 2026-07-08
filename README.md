@@ -38,6 +38,19 @@ Full numbers and the v2 learning curve: [`results/RESULTS.md`](results/RESULTS.m
 
 ---
 
+## Released artifacts (three companion locations)
+
+| Where | What | Link |
+|---|---|---|
+| **GitHub** (this repo) | Code, task banks, hidden tests, verifier, harness, paper source | https://github.com/shawnkim678/compete-then-collaborate |
+| 🤗 **HF Dataset** | Task banks (MBPP + code_contests d6–9) — `load_dataset()`-ready mirror | https://huggingface.co/datasets/shawnmkim/compete-collab-taskbank |
+| 🤗 **HF Model** | Final **RLVR/GRPO LoRA adapter** for Qwen2.5-Coder-7B (paper §5.3) | https://huggingface.co/shawnmkim/qwen2.5-coder-7b-rlvr-compete-collab |
+
+> HF namespace is `shawnmkim` (author's Hugging Face account); GitHub namespace is `shawnkim678`.
+> Same author, different platform handles — the three artifacts are linked bidirectionally.
+
+---
+
 ## Quickstart
 
 ```bash
@@ -83,7 +96,7 @@ compete-then-collaborate/
 **Not included by policy** (regenerate them yourself):
 - Teacher raw outputs / verified solutions (`*_gold*.jsonl`) — **D1**. Regenerate with your own keys (below).
 - SFT / teacher-distilled student weights — **D3**.
-- The RLVR student LoRA adapter is teacher-output-free (**D3**) and may be published separately on the HF Hub; a link will be added here when uploaded.
+- The RLVR student LoRA adapter is teacher-output-free (**D3**) and is published on the 🤗 Hub: [`shawnmkim/qwen2.5-coder-7b-rlvr-compete-collab`](https://huggingface.co/shawnmkim/qwen2.5-coder-7b-rlvr-compete-collab). Load with `PeftModel.from_pretrained(base, ...)` on top of `Qwen/Qwen2.5-Coder-7B`.
 
 ## Two reproduction paths
 

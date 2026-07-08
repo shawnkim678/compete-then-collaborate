@@ -357,10 +357,17 @@ full on-prem pipeline and the framework patches required to reproduce it on NVID
 
 \section*{Reproducibility}
 All code, task banks, hidden tests, results, and this paper are released at
-\url{https://github.com/shawnkim678/compete-then-collaborate}. Readers can re-verify every reported
-number offline (\texttt{python reproduce.py --check-banks --selftest} on the released artifacts) or
-regenerate teacher solutions with their own API keys under their own provider terms; we redistribute
-no teacher outputs (see the ethics statement).
+\url{https://github.com/shawnkim678/compete-then-collaborate}. The execution-verified task bank is
+also mirrored as a Hugging Face dataset, and the final RLVR (GRPO) LoRA adapter as a Hugging Face
+model:
+\begin{itemize}
+  \item Dataset: \url{https://huggingface.co/datasets/shawnmkim/compete-collab-taskbank}
+  \item Model:   \url{https://huggingface.co/shawnmkim/qwen2.5-coder-7b-rlvr-compete-collab}
+\end{itemize}
+Readers can re-verify every reported number offline
+(\texttt{python reproduce.py --check-banks --selftest} on the released artifacts) or regenerate
+teacher solutions with their own API keys under their own provider terms; we redistribute no
+teacher outputs (see the ethics statement).
 
 \medskip\noindent
 Scripts: \texttt{verify\_code.py},
